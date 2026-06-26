@@ -165,4 +165,4 @@ function RootComponent() {
       <Outlet />
     </QueryClientProvider>
   );
-}
+        }
