@@ -187,8 +187,15 @@ function MovieView({ item }: { item: Extract<GridItem, { kind: "movie" }> }) {
   const genres = splitGenres(s.genre);
 
   const titleText = `${s.title} (${year}) Sinhala Subtitle | Download Movie Subtitles | PixelPopLK`;
-  const descText = `Download Sinhala subtitles for ${s.title} (${year}). High-quality Sinhala sub file synced for official release. Fast & secure on PixelPopLK.`;
-  const keywordText = `${s.title} Sinhala Subtitle, Download ${s.title} Subtitle, PixelPopLK, Sinhala Subtitles, Movie Subtitles`;
+  const descText = s.description 
+    ? s.description.slice(0, 160)
+    : `Download Sinhala subtitles for ${s.title} (${year}). High-quality Sinhala sub file synced for official release. Fast & secure on PixelPopLK.`;
+  
+  // Admin panel එකෙන් metatags දමා ඇත්නම් ඒවා ප්‍රමුඛව භාවිත කරයි
+  const customMeta = (s as any).metatags;
+  const keywordText = customMeta 
+    ? `${s.title} Sinhala Subtitle, ${customMeta}`
+    : `${s.title} Sinhala Subtitle, Download ${s.title} Subtitle, PixelPopLK, Sinhala Subtitles, Movie Subtitles`;
 
   useEffect(() => {
     document.title = titleText;
@@ -208,6 +215,7 @@ function MovieView({ item }: { item: Extract<GridItem, { kind: "movie" }> }) {
 
     updateMeta("description", descText);
     updateMeta("keywords", keywordText);
+    updateMeta("robots", "index, follow"); // සෙවුම් යන්ත්‍ර වලට පිටුව හසුකර ගැනීමට අත්‍යවශ්‍යයි
     updateMeta("og:title", titleText, true);
     updateMeta("og:description", descText, true);
     updateMeta("og:type", "video.movie", true);
@@ -291,8 +299,19 @@ function SeriesView({ item }: { item: Extract<GridItem, { kind: "series" }> }) {
   );
 
   const titleText = `${item.showName} Sinhala Subtitles | TV Series Download | PixelPopLK`;
-  const descText = `Download Sinhala subtitles for TV Series ${item.showName} (${meta.year}). Latest seasons and episodes available on PixelPopLK.`;
-  const keywordText = `${item.showName} Sinhala Subtitles, Sinhala Subitiles TV Series, ${item.showName} Sinhala Subitiles TV Series, PixelPopLK`;
+  const descText = meta.description 
+    ? meta.description.slice(0, 160)
+    : `Download Sinhala subtitles for TV Series ${item.showName} (${meta.year}). Latest seasons and episodes available on PixelPopLK.`;
+  
+  // TV Series එකක episodes වල ඇති metatags සසඳා කියවා ගැනීම
+  const customMeta = useMemo(() => {
+    const metas = item.episodes.map(e => (e as any).metatags).filter(Boolean);
+    return metas.length > 0 ? metas[0] : null;
+  }, [item]);
+
+  const keywordText = customMeta
+    ? `${item.showName} Sinhala Subtitles, ${customMeta}`
+    : `${item.showName} Sinhala Subtitles, Sinhala Subitiles TV Series, ${item.showName} Sinhala Subitiles TV Series, PixelPopLK`;
 
   useEffect(() => {
     document.title = titleText;
@@ -312,6 +331,7 @@ function SeriesView({ item }: { item: Extract<GridItem, { kind: "series" }> }) {
 
     updateMeta("description", descText);
     updateMeta("keywords", keywordText);
+    updateMeta("robots", "index, follow"); // TV Series පිටුව ද සෙවුම් වලට එක් කිරීමට අත්‍යවශ්‍යයි
     updateMeta("og:title", titleText, true);
     updateMeta("og:description", descText, true);
     updateMeta("og:type", "video.tv_show", true);
@@ -394,8 +414,3 @@ function SeriesView({ item }: { item: Extract<GridItem, { kind: "series" }> }) {
               </span>
             </Link>
           ))}
-        </div>
-      </div>
-    </Hero>
-  );
-}
