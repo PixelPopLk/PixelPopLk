@@ -37,7 +37,7 @@ function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ආරම්භක Session එක පරීක්ෂා කිරීම
+    // සක්‍රිය Session එක ලබා ගැනීම
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -60,10 +60,10 @@ function AdminPage() {
     );
   }
 
-  // ලොග් වී නොමැති නම් Login (Gate) පෙන්වන්න
+  // ලොග් වී නොමැති නම් Login Panel (Gate) එක පෙන්වන්න
   if (!session) return <Gate />;
   
-  // ලොග් වී ඇත්නම් Dashboard පෙන්වන්න
+  // ලොග් වී ඇත්නම් Dashboard එක පෙන්වන්න
   return <Dashboard />;
 }
 
@@ -142,7 +142,7 @@ function Gate() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow hover:opacity-95 transition disabled:opacity-60"
+          className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow hover:opacity-95 transition disabled:opacity-60 cursor-pointer"
         >
           {loading ? (
             <>
@@ -176,6 +176,7 @@ type FormState = {
   genre: string;
   season: string;
   episode: string;
+  metatags: string; // <-- නව FormState අගය
 };
 
 const EMPTY: FormState = {
@@ -189,6 +190,7 @@ const EMPTY: FormState = {
   genre: "",
   season: "",
   episode: "",
+  metatags: "", // <-- හිස් FormState අගය
 };
 
 function Dashboard() {
@@ -236,6 +238,7 @@ function Dashboard() {
       genre: form.genre.trim() || null,
       season: form.season.trim() === "" ? null : Number(form.season),
       episode: form.episode.trim() === "" ? null : Number(form.episode),
+      metatags: form.metatags.trim() || null, // <-- Supabase payload එකට metatags එක් කිරීම
     };
   };
 
@@ -273,6 +276,7 @@ function Dashboard() {
       genre: r.genre ?? "",
       season: r.season == null ? "" : String(r.season),
       episode: r.episode == null ? "" : String(r.episode),
+      metatags: (r as any).metatags ?? "", // <-- TypeScript Build Error මඟහරවා ගැනීමට defensive casting යොදා ඇත
     });
     setStatus({ type: "idle" });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -352,6 +356,10 @@ function Dashboard() {
               <Field label="Download Link *" value={form.download_link} onChange={(v) => set("download_link", v)} placeholder="https://..." />
               <Field label="Image URL *" value={form.image_url} onChange={(v) => set("image_url", v)} placeholder="https://image.tmdb.org/..." className="sm:col-span-2" />
               <Field label="Genre (comma separated)" value={form.genre} onChange={(v) => set("genre", v)} placeholder="Movie, Sci-Fi, Horror" className="sm:col-span-2" />
+              
+              {/* SEO Meta Tags ආදාන ක්ෂේත්‍රය (Input field) */}
+              <Field label="SEO Meta Tags" value={form.metatags} onChange={(v) => set("metatags", v)} placeholder="Keywords, description etc. e.g. breaking-bad-sinhala-sub, download-sub" className="sm:col-span-2" />
+
               <Field label="Year" value={form.year} onChange={(v) => set("year", v)} placeholder="2024" />
               <Field label="Rating (IMDb)" value={form.rating} onChange={(v) => set("rating", v)} placeholder="8.5" />
               <Field label="Season" value={form.season} onChange={(v) => set("season", v)} placeholder="1" />
@@ -575,4 +583,4 @@ function Field({
       />
     </label>
   );
-          }
+}
