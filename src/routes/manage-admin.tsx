@@ -32,39 +32,61 @@ export const Route = createFileRoute("/manage-admin")({
   notFoundComponent: () => <div className="p-10 text-center">Not found</div>,
 });
 
-const PASSWORD = "PixelPop@2026";
-const AUTH_KEY = "pixelpop_admin_unlocked";
-
 function AdminPage() {
-  const [unlocked, setUnlocked] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem(AUTH_KEY) === "1") setUnlocked(true);
-    } catch {
-      /* noop */
-    }
+    // ආරම්භක Session එක පරීක්ෂා කිරීම
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // Login/Logout වෙනස්වීම් නිරීක්ෂණය කිරීම
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  if (!unlocked) return <Gate onUnlock={() => setUnlocked(true)} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // ලොග් වී නොමැති නම් Login (Gate) පෙන්වන්න
+  if (!session) return <Gate />;
+  
+  // ලොග් වී ඇත්නම් Dashboard පෙන්වන්න
   return <Dashboard />;
 }
 
-function Gate({ onUnlock }: { onUnlock: () => void }) {
+function Gate() {
+  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
-  const [err, setErr] = useState(false);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw === PASSWORD) {
-      try {
-        sessionStorage.setItem(AUTH_KEY, "1");
-      } catch {
-        /* noop */
-      }
-      onUnlock();
-    } else {
-      setErr(true);
+    setLoading(true);
+    setErr("");
+
+    // Supabase Auth භාවිතයෙන් Login වීම
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: pw,
+    });
+
+    setLoading(false);
+    if (error) {
+      setErr(error.message);
     }
   };
 
@@ -83,29 +105,52 @@ function Gate({ onUnlock }: { onUnlock: () => void }) {
           Admin <span className="text-gradient">Access</span>
         </h1>
         <p className="mt-1 text-center text-sm text-muted-foreground">
-          Enter the password to continue.
+          Enter your credentials to continue.
         </p>
+
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setErr("");
+          }}
+          placeholder="Email Address"
+          required
+          autoFocus
+          className="mt-6 w-full px-4 py-3 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+        />
+
         <input
           type="password"
           value={pw}
           onChange={(e) => {
             setPw(e.target.value);
-            setErr(false);
+            setErr("");
           }}
           placeholder="Password"
-          autoFocus
-          className="mt-6 w-full px-4 py-3 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+          required
+          className="mt-3 w-full px-4 py-3 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
         />
+
         {err && (
           <p className="mt-2 text-xs text-destructive flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5" /> Incorrect password.
+            <AlertCircle className="w-3.5 h-3.5" /> {err}
           </p>
         )}
+
         <button
           type="submit"
-          className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow hover:opacity-95 transition"
+          disabled={loading}
+          className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow hover:opacity-95 transition disabled:opacity-60"
         >
-          Unlock Dashboard
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> Verifying…
+            </>
+          ) : (
+            "Unlock Dashboard"
+          )}
         </button>
         <Link
           to="/"
@@ -245,13 +290,12 @@ function Dashboard() {
     refetch();
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
-      sessionStorage.removeItem(AUTH_KEY);
+      await supabase.auth.signOut();
     } catch {
       /* noop */
     }
-    window.location.reload();
   };
 
   return (
@@ -270,7 +314,7 @@ function Dashboard() {
           <div className="ml-auto flex items-center gap-3">
             <button
               onClick={logout}
-              className="text-xs text-muted-foreground hover:text-destructive transition"
+              className="text-xs text-muted-foreground hover:text-destructive transition cursor-pointer"
             >
               Lock
             </button>
@@ -364,7 +408,7 @@ function Dashboard() {
             <button
               type="submit"
               disabled={status.type === "saving"}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-primary text-primary-foreground font-semibold text-sm shadow-glow hover:opacity-95 transition disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-primary text-primary-foreground font-semibold text-sm shadow-glow hover:opacity-95 transition disabled:opacity-60 cursor-pointer"
             >
               {status.type === "saving" ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
@@ -379,7 +423,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-border text-sm font-semibold hover:border-primary/40 hover:text-primary transition"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-border text-sm font-semibold hover:border-primary/40 hover:text-primary transition cursor-pointer"
               >
                 <XCircle className="w-4 h-4" /> Cancel edit
               </button>
@@ -472,14 +516,14 @@ function Dashboard() {
                           <div className="inline-flex gap-1">
                             <button
                               onClick={() => startEdit(r)}
-                              className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
+                              className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition cursor-pointer"
                               aria-label="Edit"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => remove(r)}
-                              className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+                              className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition cursor-pointer"
                               aria-label="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -531,4 +575,4 @@ function Field({
       />
     </label>
   );
-}
+          }
