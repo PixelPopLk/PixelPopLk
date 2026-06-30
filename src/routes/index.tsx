@@ -14,6 +14,9 @@ import {
   ChevronRight,
   Subtitles,
   SlidersHorizontal,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { z } from "zod";
 
@@ -115,7 +118,7 @@ function getItemYear(it: GridItem): number | null {
 function getItemRating(it: GridItem): number | null {
   const raw = it.kind === "movie" ? it.sub?.rating : it.episodes?.[0]?.rating;
   if (raw === undefined || raw === null || String(raw).trim() === "") return null;
-  const n = parseFloat(String(raw));
+  const n = typeof raw === "number" ? raw : parseFloat(String(raw));
   return isNaN(n) ? null : n;
 }
 
@@ -155,6 +158,14 @@ function HomePage() {
   const [targetId, setTargetId] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const completedRef = useRef(false);
+
+  // Request Subtitle Form States
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [requestTitle, setRequestTitle] = useState("");
+  const [requestType, setRequestType] = useState<"movie" | "tv">("movie");
+  const [requestNotes, setRequestNotes] = useState("");
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestStatusMsg, setRequestStatusMsg] = useState("");
 
   // Sync URL search 'q' to local query state
   useEffect(() => {
@@ -238,18 +249,55 @@ function HomePage() {
     navigate({ to: "/content/$id", params: { id } });
   };
 
-  // 🔥 2. Download බටන් ක්ලික් කළ විට පමණක් Monetag ඇඩ් එක සහ countdown ක්‍රියාත්මක වේ
+  // 🔥 2. Download බටන් ක්ලික් කළ විට Monetag සහ Adsterra මාරුවෙන් මාරුවට 50% ක සම්භාවිතාවයකින් ක්‍රියාත්මක වේ
   const handleDownloadClick = (id: string) => {
     completedRef.current = false;
     setTargetId(id);
     setCountdown(5);
     setModalOpen(true);
     
-    // බටන් එක ඔබපු ගමන් Monetag ඇඩ් එක අලුත් ටැබ් එකක ඕපන් වෙනවා
-    window.open("https://omg10.com/4/11202064", "_blank");
+    const adUrl = Math.random() < 0.5 
+      ? "https://omg10.com/4/11202064" 
+      : "https://www.effectivecpmnetwork.com/b795sywmp?key=20b07ce2b76b7238eae7acf49dd3a534";
+    
+    window.open(adUrl, "_blank");
   };
 
-  // 🔥 3. Countdown Logic Effect
+  // 🔥 3. Subtitle Request එකක් Supabase වෙත යැවීම (තත්පර 15ක Cooldown Spam Protection සහිතව)
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requestTitle.trim()) return;
+
+    // Cooldown check
+    const lastSubmit = localStorage.getItem("last_request_submit_time");
+    const now = Date.now();
+    if (lastSubmit && now - parseInt(lastSubmit, 10) < 15000) {
+      setRequestStatusMsg("Error: Please wait 15 seconds before submitting another request.");
+      return;
+    }
+
+    setRequestLoading(true);
+    setRequestStatusMsg("");
+
+    const { error } = await supabase.from("subtitle_requests").insert({
+      title: requestTitle.trim(),
+      type: requestType,
+      notes: requestNotes.trim() || null,
+    });
+
+    setRequestLoading(false);
+    if (error) {
+      setRequestStatusMsg(`Error: ${error.message}`);
+    } else {
+      setRequestStatusMsg("Request submitted successfully! Thank you ❤");
+      setRequestTitle("");
+      setRequestNotes("");
+      localStorage.setItem("last_request_submit_time", String(now));
+      setTimeout(() => setRequestModalOpen(false), 2500); // සාර්ථක වූ විට තත්පර 2.5කින් වසා දමයි
+    }
+  };
+
+  // 🔥 4. Countdown Logic Effect
   useEffect(() => {
     if (!modalOpen) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -276,7 +324,7 @@ function HomePage() {
     };
   }, [modalOpen, targetId, navigate]);
 
-  // 🔥 4. Tab-Switching Anti-Cheat (Visibility API) - ඉක්මනින් ආපහු ආවොත් ටයිමර් එක 5ට Reset වෙනවා
+  // 🔥 5. Tab-Switching Anti-Cheat (Visibility API) - ඉක්මනින් ආපහු ආවොත් ටයිමර් එක 5ට Reset වෙනවා
   useEffect(() => {
     if (!modalOpen) return;
 
@@ -293,7 +341,7 @@ function HomePage() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [modalOpen]);
 
-  // 🔥 5. Back Button Blocking (පස්සට යන්න හැදුවොත් වළක්වනවා)
+  // 🔥 6. Back Button Blocking (පස්සට යන්න හැදුවොත් වළක්වනවා)
   useEffect(() => {
     if (!modalOpen) return;
 
@@ -465,7 +513,117 @@ function HomePage() {
         )}
       </section>
 
+      {/* 🔥 Request Subtitle Banner Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+        <div className="bg-gradient-to-r from-primary/10 to-cyan-500/10 rounded-3xl border border-border/80 p-8 text-center max-w-4xl mx-auto shadow-card">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+            Can't find your <span className="text-gradient">Subtitle</span>?
+          </h2>
+          <p className="text-muted-foreground text-sm mt-2 max-w-lg mx-auto">
+            Submit a request and we will translate and upload it as soon as possible!
+          </p>
+          <button
+            onClick={() => setRequestModalOpen(true)}
+            className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-primary text-primary-foreground font-semibold text-sm shadow-glow hover:opacity-95 transition cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" /> Request a Subtitle
+          </button>
+        </div>
+      </section>
+
       <Footer />
+
+      {/* Request Subtitle Modal */}
+      <AnimatePresence>
+        {requestModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-default"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              className="bg-card border border-border p-6 sm:p-8 rounded-3xl max-w-md w-full shadow-2xl relative"
+            >
+              <button
+                onClick={() => {
+                  setRequestModalOpen(false);
+                  setRequestTitle("");
+                  setRequestNotes("");
+                  setRequestStatusMsg("");
+                }}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <h3 className="text-xl font-bold tracking-tight">Request a Subtitle</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Tell us what subtitle you need, and we'll work on it.
+              </p>
+
+              <form onSubmit={handleRequestSubmit} className="mt-5 space-y-4 text-left">
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Movie / Series Title *</span>
+                  <input
+                    type="text"
+                    required
+                    value={requestTitle}
+                    onChange={(e) => setRequestTitle(e.target.value)}
+                    placeholder="e.g. Inception (2010)"
+                    className="mt-2 w-full px-4 py-2.5 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-sm transition-colors"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Type</span>
+                  <select
+                    value={requestType}
+                    onChange={(e) => setRequestType(e.target.value as "movie" | "tv")}
+                    className="mt-2 w-full px-4 py-2.5 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-sm cursor-pointer"
+                  >
+                    <option value="movie" className="bg-background text-foreground">Movie</option>
+                    <option value="tv" className="bg-background text-foreground">TV Series</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Additional Notes (Optional)</span>
+                  <textarea
+                    value={requestNotes}
+                    onChange={(e) => setRequestNotes(e.target.value)}
+                    placeholder="e.g. IMDb Link, specific season/episode, or sync details..."
+                    rows={3}
+                    className="mt-2 w-full px-4 py-2.5 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-sm resize-none"
+                  />
+                </label>
+
+                {requestStatusMsg && (
+                  <p className={`text-xs flex items-center gap-1.5 ${requestStatusMsg.includes("Error") ? "text-destructive" : "text-primary"}`}>
+                    {requestStatusMsg.includes("Error") ? <AlertCircle className="w-4.5 h-4.5" /> : <CheckCircle2 className="w-4.5 h-4.5" />}
+                    {requestStatusMsg}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={requestLoading}
+                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow hover:opacity-95 transition cursor-pointer disabled:opacity-60"
+                >
+                  {requestLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+                  ) : (
+                    "Submit Request"
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Monetag Countdown Interception Modal */}
       <AnimatePresence>
@@ -573,7 +731,7 @@ function Hero({
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" /> Trending Now
           </span>
-          <span className="text-xs text-muted-foreground">Sinhala Subtitles</span>
+          <span className="text-xs text-muted-foreground">Subtitles</span>
         </div>
 
         <div className="relative overflow-hidden rounded-3xl border border-border shadow-card">
@@ -933,4 +1091,4 @@ function Footer() {
       </div>
     </footer>
   );
-       }
+}
