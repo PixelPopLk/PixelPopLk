@@ -28,7 +28,7 @@ async function generateSitemap() {
     }
 
     const subtitles = await res.json();
-    const baseUrl = "https://pixelpoplk.com"; // ඔයාගේ වෙබ් අඩවියේ ප්‍රධාන ලිපිනය
+    const baseUrl = "https://pixelpopshows.netlify.app"; // ඔයාගේ වෙබ් අඩවියේ ප්‍රධාන ලිපිනය
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
