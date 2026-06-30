@@ -1,11 +1,10 @@
 import fs from 'fs';
 
 // Netlify හි ඇති Environment Variables කියවා ගැනීම
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "ඔයාගේ_Supabase_URL_එක_මෙතැනට_දාන්න";
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || "ඔයාගේ_Supabase_Anon_Key_එක_මෙතැනට_දාන්න";
 
 async function generateSitemap() {
-  // Environment variables නොමැති නම් build එක ක්‍රියා විරහිත වීම වළක්වා ගැනීමට warning එකක් පෙන්වයි
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn("Warning: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is missing in environment!");
     console.warn("Skipping sitemap generation for this build.");
@@ -28,7 +27,7 @@ async function generateSitemap() {
     }
 
     const subtitles = await res.json();
-    const baseUrl = "https://pixelpopshows.netlify.app"; // ඔයාගේ වෙබ් අඩවියේ ප්‍රධාන ලිපිනය
+    const baseUrl = "https://pixelpopshows.netlify.app"; // ඔයාගේ නිදහස් netlify ඩොමේන් එක
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
@@ -53,12 +52,16 @@ async function generateSitemap() {
 
     xml += `</urlset>`;
 
-    // Vite build වීමට පෙර public ෆෝල්ඩරය තුළට sitemap.xml ලියනු ලැබේ
-    fs.writeFileSync('./public/sitemap.xml', xml);
+    // 📂 './public' ෆෝල්ඩරය සෑදී නොමැති නම් එය ස්වයංක්‍රීයවම සාදයි (ENOENT Error එක වළක්වයි)
+    const outDir = './public';
+    if (!fs.existsSync(outDir)) {
+      fs.mkdirSync(outDir, { recursive: true });
+    }
+
+    fs.writeFileSync(`${outDir}/sitemap.xml`, xml);
     console.log("Sitemap generated successfully at ./public/sitemap.xml!");
   } catch (err) {
     console.error("Failed to generate sitemap:", err);
-    // Build එක සම්පූර්ණයෙන්ම Fail වීම වැළැක්වීමට මෙහිදී exit(0) යොදා ඇත
     process.exit(0);
   }
 }
