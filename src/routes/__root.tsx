@@ -107,11 +107,11 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "PixelPopLK",
-  "url": "https://pixelpoplk.com",
+  "url": "https://pixelpopshows.netlify.app",
   "description": "Premium Sinhala subtitles for movies and TV series. Curated, fast, and secure downloads.",
   "potentialAction": {
     "@type": "SearchAction",
-    "target": "https://pixelpoplk.com/?q={search_term_string}",
+    "target": "https://pixelpopshows.netlify.app/?q={search_term_string}",
     "query-input": "required name=search_term_string"
   }
 };
@@ -121,6 +121,10 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        
+        {/* 🔥 Google Search Console Verification Meta Tag */}
+        <meta name="google-site-verification" content="AYcYpgECc8CuNnDuGNWWkFDsD2zd3h_jZ9S5JADo2f4" />
+        
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
