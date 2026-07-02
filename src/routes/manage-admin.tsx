@@ -34,27 +34,60 @@ export const Route = createFileRoute("/manage-admin")({
   notFoundComponent: () => <div className="p-10 text-center">Not found</div>,
 });
 
+// බ්‍රවුසරයේ localStorage එකෙන් සක්‍රිය Supabase Session එකක් තිබේදැයි සෘජුවම කියවා ගන්නා ශ්‍රිතය (Synchronous login recovery)
+const getStoredSession = () => {
+  try {
+    if (typeof window !== "undefined") {
+      const keys = Object.keys(localStorage);
+      const authKey = keys.find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+      if (authKey) {
+        const data = localStorage.getItem(authKey);
+        if (data) return JSON.parse(data);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to parse stored session", e);
+  }
+  return null;
+};
+
 function AdminPage() {
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // සයිට් එක ලෝඩ් වෙන කොටම පරණ session එකක් තිබේ නම් කෙලින්ම Dashboard එක පෙන්වීමට සලස්වයි (ලොගින් පිටුව ප්ලේ වීම වළක්වයි)
+  const [session, setSession] = useState<any>(() => getStoredSession());
+  const [loading, setLoading] = useState(() => !getStoredSession());
 
   useEffect(() => {
-    // සක්‍රිය Session එක ලබා ගැනීම
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
+    let mounted = true;
+
+    // පසුබිමෙන් Supabase Session එක තහවුරු කර ගැනීම
+    supabase.auth.getSession().then(({ data: { session: asyncSession } }) => {
+      if (mounted) {
+        if (asyncSession) {
+          setSession(asyncSession);
+        }
+        setLoading(false);
+      }
     });
 
     // Login/Logout වෙනස්වීම් නිරීක්ෂණය කිරීම
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (mounted) {
+        if (currentSession) {
+          setSession(currentSession);
+        } else if (event === "SIGNED_OUT") {
+          setSession(null);
+        }
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  if (loading) {
+  if (loading && !session) {
     return (
       <div className="min-h-screen grid place-items-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -62,10 +95,7 @@ function AdminPage() {
     );
   }
 
-  // ලොග් වී නොමැති නම් Login Panel (Gate) එක පෙන්වන්න
   if (!session) return <Gate />;
-  
-  // ලොග් වී ඇත්නම් Dashboard එක පෙන්වන්න
   return <Dashboard />;
 }
 
@@ -80,7 +110,6 @@ function Gate() {
     setLoading(true);
     setErr("");
 
-    // Supabase Auth භාවිතයෙන් Login වීම
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password: pw,
@@ -193,7 +222,6 @@ const EMPTY: FormState = {
   metatags: "",
 };
 
-// URL එකකින් TMDB ID එක සහ Type එක වෙන්කර ගන්නා Regex ශ්‍රිතය
 const extractTmdbId = (input: string): { id: string; type: "movie" | "tv" | null } => {
   const clean = input.trim();
   if (/^\d+$/.test(clean)) {
@@ -213,31 +241,15 @@ function Dashboard() {
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [search, setSearch] = useState("");
 
-  // TMDB API States
+  // TMDB API සහ Telegram States ස්ථාවරව බ්‍රවුසරයේ LocalStorage එකෙන් සෘජුවම කියවා ගැනීම (Persistence fix)
   const [tmdbId, setTmdbId] = useState("");
   const [tmdbType, setTmdbType] = useState<"movie" | "tv">("movie");
-  const [tmdbKey, setTmdbKey] = useState("");
+  const [tmdbKey, setTmdbKey] = useState(() => localStorage.getItem("pixelpop_tmdb_key") || "");
   const [tmdbLoading, setTmdbLoading] = useState(false);
 
-  // Telegram States
-  const [tgEnabled, setTgEnabled] = useState(false);
-  const [tgBotToken, setTgBotToken] = useState("");
-  const [tgChatId, setTgChatId] = useState("");
-
-  // Phone එකෙහි LocalStorage එකෙන් දත්ත කියවා ගැනීම
-  useEffect(() => {
-    const savedKey = localStorage.getItem("pixelpop_tmdb_key");
-    if (savedKey) setTmdbKey(savedKey);
-
-    const savedTgEnabled = localStorage.getItem("pixelpop_tg_enabled") === "true";
-    setTgEnabled(savedTgEnabled);
-
-    const savedTgBotToken = localStorage.getItem("pixelpop_tg_bot_token");
-    if (savedTgBotToken) setTgBotToken(savedTgBotToken);
-
-    const savedTgChatId = localStorage.getItem("pixelpop_tg_chat_id");
-    if (savedTgChatId) setTgChatId(savedTgChatId);
-  }, []);
+  const [tgEnabled, setTgEnabled] = useState(() => localStorage.getItem("pixelpop_tg_enabled") === "true");
+  const [tgBotToken, setTgBotToken] = useState(() => localStorage.getItem("pixelpop_tg_bot_token") || "");
+  const [tgChatId, setTgChatId] = useState(() => localStorage.getItem("pixelpop_tg_chat_id") || "");
 
   const { data: rows, refetch } = useQuery({
     queryKey: ["subtitles", "admin-all"],
@@ -251,7 +263,6 @@ function Dashboard() {
     },
   });
 
-  // User Requests Query (පරිශීලක ඉල්ලීම් ලබාගැනීම)
   const { data: requests, refetch: refetchRequests } = useQuery({
     queryKey: ["subtitle_requests"],
     queryFn: async () => {
@@ -262,7 +273,7 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: activeTab === "requests", // Tab එක සක්‍රිය වූ විට පමණක් Load කරයි
+    enabled: activeTab === "requests",
   });
 
   const filtered = useMemo(() => {
@@ -305,7 +316,6 @@ function Dashboard() {
     setStatus({ type: "saving" });
     const payload = buildPayload();
     
-    // Auto-return data for Telegram routing (.select() එකතු කර ඇත)
     const query = editing
       ? supabase.from(SUBTITLES_TABLE).update(payload).eq("id", form.id as Subtitle["id"]).select()
       : supabase.from(SUBTITLES_TABLE).insert(payload).select();
@@ -317,7 +327,6 @@ function Dashboard() {
       return;
     }
 
-    // 🔥 Telegram Auto-Post සජීවීව ක්‍රියාත්මක කිරීම
     if (!error && dbData && dbData[0]) {
       const insertedRow = dbData[0];
       if (tgEnabled && tgBotToken && tgChatId) {
@@ -348,7 +357,7 @@ function Dashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: tgChatId,
-              photo: insertedRow.image_url || "https://pixelpoplk.com/placeholder-poster.jpg",
+              photo: insertedRow.image_url || "https://pixelpopshows.netlify.app/placeholder-poster.jpg",
               caption: caption,
               parse_mode: 'HTML',
             }),
@@ -643,7 +652,7 @@ function Dashboard() {
                         localStorage.setItem("pixelpop_tg_bot_token", e.target.value);
                       }}
                       placeholder="e.g. 123456789:ABCdefGhI..."
-                      className="mt-2 w-full px-3 py-2 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-xs transition-colors"
+                      className="mt-2 w-full px-3 py-2.5 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-xs transition-colors"
                     />
                   </label>
                   <label className="block">
@@ -656,7 +665,7 @@ function Dashboard() {
                         localStorage.setItem("pixelpop_tg_chat_id", e.target.value);
                       }}
                       placeholder="e.g. @pixelpoplk or -100xxxxxxxx"
-                      className="mt-2 w-full px-3 py-2 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-xs transition-colors"
+                      className="mt-2 w-full px-3 py-2.5 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-xs transition-colors"
                     />
                   </label>
                 </div>
@@ -875,7 +884,7 @@ function Dashboard() {
             </section>
           </>
         ) : (
-          /* 🔥 User Requests Tab */
+          /* User Requests Tab */
           <section className="space-y-4">
             <h2 className="text-xl font-bold tracking-tight">
               Subtitle Requests <span className="text-xs font-medium text-muted-foreground ml-2">{requests?.length ?? 0} total</span>
@@ -971,4 +980,4 @@ function Field({
       />
     </label>
   );
-    }
+}
