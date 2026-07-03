@@ -1,8 +1,8 @@
 import fs from 'fs';
 
 // Netlify හි ඇති Environment Variables කියවා ගැනීම
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "ඔයාගේ_Supabase_URL_එක_මෙතැනට_දාන්න";
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || "ඔයාගේ_Supabase_Anon_Key_එක_මෙතැනට_දාන්න";
+const SUPABASE_URL = process.env.https://gilnzvsnkwrnfbwhobow.supabase.co || "ඔයාගේ_Supabase_URL_එක_මෙතැනට_දාන්න";
+const SUPABASE_ANON_KEY = process.env.sb_publishable_ZWL-aXdaOXfnYKKaTJO58w_FIya45KL || "ඔයාගේ_Supabase_Anon_Key_එක_මෙතැනට_දාන්න";
 
 async function generateSitemap() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -27,7 +27,7 @@ async function generateSitemap() {
     }
 
     const subtitles = await res.json();
-    const baseUrl = "https://pixelpopshows.netlify.app"; // ඔයාගේ නිදහස් netlify ඩොමේන් එක
+    const baseUrl = "https://pixelpopsubz.pages.dev"; // ඔයාගේ නිදහස් netlify ඩොමේන් එක
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
