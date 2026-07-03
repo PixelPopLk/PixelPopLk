@@ -331,7 +331,7 @@ function Dashboard() {
       const insertedRow = dbData[0];
       if (tgEnabled && tgBotToken && tgChatId) {
         try {
-          const siteUrl = "https://pixelpopsubz.pages.dev";
+          const siteUrl = "https://pixelpoplk.pages.dev";
           const isSeries = insertedRow.season != null || insertedRow.episode != null;
           
           let caption = `<b>🎬 ${insertedRow.title}</b>\n\n`;
@@ -357,7 +357,7 @@ function Dashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: tgChatId,
-              photo: insertedRow.image_url || "https://pixelpopsubz.pages.dev/placeholder-poster.jpg",
+              photo: insertedRow.image_url || "https://pixelpoplk.pages.dev/placeholder-poster.jpg",
               caption: caption,
               parse_mode: 'HTML',
             }),
