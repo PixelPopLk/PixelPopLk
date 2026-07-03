@@ -107,11 +107,11 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "PixelPopLK",
-  "url": "https://pixelpopshows.netlify.app",
+  "url": "https://pixelpopsubs.pages.dev",
   "description": "Premium Sinhala subtitles for movies and TV series. Curated, fast, and secure downloads.",
   "potentialAction": {
     "@type": "SearchAction",
-    "target": "https://pixelpopshows.netlify.app/?q={search_term_string}",
+    "target": "https://pixelpopsubs.pages.dev/?q={search_term_string}",
     "query-input": "required name=search_term_string"
   }
 };
