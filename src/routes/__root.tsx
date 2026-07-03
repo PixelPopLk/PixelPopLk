@@ -123,7 +123,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         
         {/* 🔥 Google Search Console Verification Meta Tag */}
-        <meta name="google-site-verification" content="AYcYpgECc8CuNnDuGNWWkFDsD2zd3h_jZ9S5JADo2f4" />
+        <meta name="google-site-verification" content="VoErL02EHeHtDv46aBcjIEm5DpUTnJRhPF89ewoK-M4" />
         
         <script
           type="application/ld+json"
