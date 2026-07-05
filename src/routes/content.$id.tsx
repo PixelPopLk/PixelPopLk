@@ -266,12 +266,18 @@ function MovieView({ item }: { item: Extract<GridItem, { kind: "movie" }> }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(movieSchema) }}
       />
-      <div className="mt-7">
-        <DownloadButton downloadLink={s.download_link} label="Download Subtitle" />
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          Opens in a new tab. Thank you for supporting PixelPopLK ❤
-        </p>
+      
+      {/* 🔥 Download Option බොත්තම් 2ක් (Direct සහ Telegram) සකසා ඇත */}
+      <div className="mt-7 flex flex-col sm:flex-row gap-3">
+        <DownloadButton downloadLink={s.download_link} label="Direct Download (.srt)" />
+        {(s as any).telegram_link && (
+          <DownloadButton downloadLink={(s as any).telegram_link} label="Telegram Download" variant="telegram" />
+        )}
       </div>
+      
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        Opens in a new tab. Thank you for supporting PixelPopLK ❤
+      </p>
     </Hero>
   );
 }
@@ -584,4 +590,4 @@ function CommentsSection({ subtitleId }: { subtitleId: string }) {
       </div>
     </div>
   );
-              }
+  }
