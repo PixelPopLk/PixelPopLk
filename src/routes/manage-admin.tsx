@@ -199,6 +199,7 @@ type FormState = {
   title: string;
   image_url: string;
   download_link: string;
+  telegram_link: string; // <-- අලුතින් එක් කළ FormState එක
   description: string;
   rating: string;
   year: string;
@@ -213,6 +214,7 @@ const EMPTY: FormState = {
   title: "",
   image_url: "",
   download_link: "",
+  telegram_link: "", // <-- හිස් FormState එක
   description: "",
   rating: "",
   year: "",
@@ -297,6 +299,7 @@ function Dashboard() {
       title: form.title.trim(),
       image_url: form.image_url.trim(),
       download_link: form.download_link.trim(),
+      telegram_link: form.telegram_link.trim() || null, // <-- Payload එකට එකතු කිරීම
       description: form.description.trim() || null,
       rating: num(form.rating),
       year: num(form.year),
@@ -331,7 +334,7 @@ function Dashboard() {
       const insertedRow = dbData[0];
       if (tgEnabled && tgBotToken && tgChatId) {
         try {
-          const siteUrl = "https://pixelpoplk.pages.dev";
+          const siteUrl = "https://pixelpopshows.netlify.app";
           const isSeries = insertedRow.season != null || insertedRow.episode != null;
           
           let caption = `<b>🎬 ${insertedRow.title}</b>\n\n`;
@@ -357,7 +360,7 @@ function Dashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: tgChatId,
-              photo: insertedRow.image_url || "https://pixelpoplk.pages.dev/placeholder-poster.jpg",
+              photo: insertedRow.image_url || "https://pixelpopshows.netlify.app/placeholder-poster.jpg",
               caption: caption,
               parse_mode: 'HTML',
             }),
@@ -380,6 +383,7 @@ function Dashboard() {
       title: r.title ?? "",
       image_url: r.image_url ?? "",
       download_link: r.download_link ?? "",
+      telegram_link: (r as any).telegram_link ?? "", // <-- Edit කිරීම ආරම්භයේදී දත්ත පිරවීම
       description: r.description ?? "",
       rating: r.rating == null ? "" : String(r.rating),
       year: r.year == null ? "" : String(r.year),
@@ -683,6 +687,10 @@ function Dashboard() {
                 <div className="grid sm:grid-cols-2 gap-5">
                   <Field label="Title *" value={form.title} onChange={(v) => set("title", v)} placeholder="e.g. Breaking Bad S01E01" />
                   <Field label="Download Link *" value={form.download_link} onChange={(v) => set("download_link", v)} placeholder="https://..." />
+                  
+                  {/* 🔥 Telegram Download Link කොටුව (Input) එකතු කිරීම */}
+                  <Field label="Telegram Download Link" value={form.telegram_link} onChange={(v) => set("telegram_link", v)} placeholder="https://t.me/pixelpoplk/1234" />
+                  
                   <Field label="Image URL *" value={form.image_url} onChange={(v) => set("image_url", v)} placeholder="https://image.tmdb.org/..." className="sm:col-span-2" />
                   <Field label="Genre (comma separated)" value={form.genre} onChange={(v) => set("genre", v)} placeholder="Movie, Sci-Fi, Horror" className="sm:col-span-2" />
                   
@@ -980,4 +988,4 @@ function Field({
       />
     </label>
   );
-}
+        }
