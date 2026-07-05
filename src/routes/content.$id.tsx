@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { supabase, SUBTITLES_TABLE, SUBTITLE_COLUMNS, type Subtitle } from "@/integrations/supabase/client";
+import { supabase, SUBTITLES_TABLE, type Subtitle } from "@/integrations/supabase/client";
 import {
   buildGridItems,
   formatRating,
@@ -26,54 +26,6 @@ import {
 } from "@/lib/subtitles";
 import { Navbar } from "@/components/Navbar";
 import { DownloadButton } from "@/components/DownloadCountdown";
-
-// ඔයා එවපු රූපයට සමාන, Pure SVG ඇසුරින් නිමවූ නවීනතම PixelPopLK Monogram (P + L) ලෝගෝව
-export function LogoIcon({ className = "w-9 h-9" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      className={`${className} filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        {/* Futuristic Metallic Silver/Slate Gradient (P අකුර සඳහා) */}
-        <linearGradient id="metal-silver" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="35%" stopColor="#cbd5e1" />
-          <stop offset="70%" stopColor="#64748b" />
-          <stop offset="100%" stopColor="#1e293b" />
-        </linearGradient>
-        {/* Futuristic Metallic Gold/Bronze Gradient (L අකුරෙහි වක්‍රය සඳහා) */}
-        <linearGradient id="metal-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fef08a" />
-          <stop offset="40%" stopColor="#ca8a04" />
-          <stop offset="80%" stopColor="#854d0e" />
-          <stop offset="100%" stopColor="#422006" />
-        </linearGradient>
-      </defs>
-      
-      {/* outer 'P' backbone with futuristic angles (Silver) */}
-      <path
-        d="M26,18 L60,18 C78,18 78,44 60,44 L38,44 L38,82 L26,82 Z"
-        fill="url(#metal-silver)"
-        stroke="#0f172a"
-        strokeWidth="2.5"
-        strokeLinejoin="round"
-      />
-      
-      {/* inner 'L' sweep seamlessly fused (Gold) */}
-      <path
-        d="M48,31 C56,31 66,35 66,45 C66,58 52,69 38,69 L64,69"
-        fill="none"
-        stroke="url(#metal-gold)"
-        strokeWidth="9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export const Route = createFileRoute("/content/$id")({
   head: () => ({ meta: [{ title: "Subtitle — PixelPopLK" }] }),
@@ -101,12 +53,12 @@ function ContentPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["subtitles"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: dbData, error } = await supabase
         .from(SUBTITLES_TABLE)
-        .select(SUBTITLE_COLUMNS)
+        .select("*") // <-- මෙහිදී සියලුම Columns සක්‍රියව ලබාගනී (Telegram link දෝෂය සම්පූර්ණයෙන්ම විසඳයි)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Subtitle[];
+      return (dbData ?? []) as Subtitle[];
     },
   });
 
@@ -123,7 +75,6 @@ function ContentPage() {
     return null;
   }, [data, id]);
 
-  // 🔥 Early returns සම්පූර්ණයෙන්ම ඉවත් කර, සියල්ල ප්‍රධාන return එක ඇතුළට ගෙන ඇත (Error 310 ස්ථාවරව වළක්වයි)
   return (
     <Shell>
       {isLoading ? (
