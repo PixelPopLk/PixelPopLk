@@ -27,6 +27,54 @@ import {
 import { Navbar } from "@/components/Navbar";
 import { DownloadButton } from "@/components/DownloadCountdown";
 
+// ඔයා එවපු රූපයට සමාන, Pure SVG ඇසුරින් නිමවූ නවීනතම PixelPopLK Monogram (P + L) ලෝගෝව
+export function LogoIcon({ className = "w-9 h-9" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={`${className} filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.3)]`}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        {/* Futuristic Metallic Silver/Slate Gradient (P අකුර සඳහා) */}
+        <linearGradient id="metal-silver" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="35%" stopColor="#cbd5e1" />
+          <stop offset="70%" stopColor="#64748b" />
+          <stop offset="100%" stopColor="#1e293b" />
+        </linearGradient>
+        {/* Futuristic Metallic Gold/Bronze Gradient (L අකුරෙහි වක්‍රය සඳහා) */}
+        <linearGradient id="metal-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fef08a" />
+          <stop offset="40%" stopColor="#ca8a04" />
+          <stop offset="80%" stopColor="#854d0e" />
+          <stop offset="100%" stopColor="#422006" />
+        </linearGradient>
+      </defs>
+      
+      {/* outer 'P' backbone with futuristic angles (Silver) */}
+      <path
+        d="M26,18 L60,18 C78,18 78,44 60,44 L38,44 L38,82 L26,82 Z"
+        fill="url(#metal-silver)"
+        stroke="#0f172a"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      
+      {/* inner 'L' sweep seamlessly fused (Gold) */}
+      <path
+        d="M48,31 C56,31 66,35 66,45 C66,58 52,69 38,69 L64,69"
+        fill="none"
+        stroke="url(#metal-gold)"
+        strokeWidth="9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export const Route = createFileRoute("/content/$id")({
   head: () => ({ meta: [{ title: "Subtitle — PixelPopLK" }] }),
   component: ContentPage,
@@ -81,10 +129,15 @@ function ContentPage() {
 
   return (
     <Shell>
-      {item.kind === "movie" ? <MovieView item={item} /> : <SeriesView item={item} />}
+      {/* 🔥 Unique keys එක් කිරීමෙන් React Hooks පටලවා ගැනීම (Error 310) සම්පූර්ණයෙන්ම වළක්වා ඇත */}
+      {item.kind === "movie" ? (
+        <MovieView key={`movie-${item.id}`} item={item} />
+      ) : (
+        <SeriesView key={`series-${item.id}`} item={item} />
+      )}
       
-      {/* Comments Section */}
-      <CommentsSection subtitleId={id} />
+      {/* Comments Section එකටද unique key එකක් එක් කර ඇත (පිටු මාරු වන විට කමෙන්ට්ස් ක්ෂණිකව රීසෙට් වීමට) */}
+      <CommentsSection key={`comments-${id}`} subtitleId={id} />
     </Shell>
   );
 }
@@ -163,7 +216,7 @@ function Hero({
             </span>
             <GenreBadges genres={genres} />
           </div>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold leading-[1.1] tracking-tight">{title}</h1>
+          <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold leading- tracking-tight">{title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
             {year && (
               <span className="inline-flex items-center gap-1.5 text-muted-foreground">
@@ -267,7 +320,7 @@ function MovieView({ item }: { item: Extract<GridItem, { kind: "movie" }> }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(movieSchema) }}
       />
       
-      {/* 🔥 Download Option බොත්තම් 2ක් (Direct සහ Telegram) සකසා ඇත */}
+      {/* Direct ඩවුන්ලෝඩ් සහ Telegram ඩවුන්ලෝඩ් බොත්තම් 2ම මෙහි සකසා ඇත */}
       <div className="mt-7 flex flex-col sm:flex-row gap-3">
         <DownloadButton downloadLink={s.download_link} label="Direct Download (.srt)" />
         {(s as any).telegram_link && (
@@ -590,4 +643,4 @@ function CommentsSection({ subtitleId }: { subtitleId: string }) {
       </div>
     </div>
   );
-  }
+        }
