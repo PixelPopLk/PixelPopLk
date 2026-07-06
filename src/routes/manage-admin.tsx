@@ -18,7 +18,7 @@ import {
   Sparkles,
   Send,
 } from "lucide-react";
-import { supabase, SUBTITLES_TABLE, SUBTITLE_COLUMNS, type Subtitle } from "@/integrations/supabase/client";
+import { supabase, SUBTITLES_TABLE, type Subtitle } from "@/integrations/supabase/client";
 import { splitGenres, genreBadgeClass } from "@/lib/subtitles";
 
 export const Route = createFileRoute("/manage-admin")({
@@ -52,7 +52,6 @@ const getStoredSession = () => {
 };
 
 function AdminPage() {
-  // සයිට් එක ලෝඩ් වෙන කොටම පරණ session එකක් තිබේ නම් කෙලින්ම Dashboard එක පෙන්වීමට සලස්වයි (ලොගින් පිටුව ප්ලේ වීම වළක්වයි)
   const [session, setSession] = useState<any>(() => getStoredSession());
   const [loading, setLoading] = useState(() => !getStoredSession());
 
@@ -199,7 +198,7 @@ type FormState = {
   title: string;
   image_url: string;
   download_link: string;
-  telegram_link: string; // <-- අලුතින් එක් කළ FormState එක
+  telegram_link: string;
   description: string;
   rating: string;
   year: string;
@@ -214,7 +213,7 @@ const EMPTY: FormState = {
   title: "",
   image_url: "",
   download_link: "",
-  telegram_link: "", // <-- හිස් FormState එක
+  telegram_link: "",
   description: "",
   rating: "",
   year: "",
@@ -243,7 +242,6 @@ function Dashboard() {
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [search, setSearch] = useState("");
 
-  // TMDB API සහ Telegram States ස්ථාවරව බ්‍රවුසරයේ LocalStorage එකෙන් සෘජුවම කියවා ගැනීම (Persistence fix)
   const [tmdbId, setTmdbId] = useState("");
   const [tmdbType, setTmdbType] = useState<"movie" | "tv">("movie");
   const [tmdbKey, setTmdbKey] = useState(() => localStorage.getItem("pixelpop_tmdb_key") || "");
@@ -253,12 +251,13 @@ function Dashboard() {
   const [tgBotToken, setTgBotToken] = useState(() => localStorage.getItem("pixelpop_tg_bot_token") || "");
   const [tgChatId, setTgChatId] = useState(() => localStorage.getItem("pixelpop_tg_chat_id") || "");
 
+  // All Subtitles Query (සියලුම තීරු - Columns කියවා ගැනීමට select("*") එක් කර ඇත)
   const { data: rows, refetch } = useQuery({
     queryKey: ["subtitles", "admin-all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from(SUBTITLES_TABLE)
-        .select(SUBTITLE_COLUMNS)
+        .select("*") // <-- select("*") යෙදීමෙන් metatags සහ telegram_link සාර්ථකව කියවා ගනී
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Subtitle[];
@@ -299,7 +298,7 @@ function Dashboard() {
       title: form.title.trim(),
       image_url: form.image_url.trim(),
       download_link: form.download_link.trim(),
-      telegram_link: form.telegram_link.trim() || null, // <-- Payload එකට එකතු කිරීම
+      telegram_link: form.telegram_link.trim() || null,
       description: form.description.trim() || null,
       rating: num(form.rating),
       year: num(form.year),
@@ -383,14 +382,14 @@ function Dashboard() {
       title: r.title ?? "",
       image_url: r.image_url ?? "",
       download_link: r.download_link ?? "",
-      telegram_link: (r as any).telegram_link ?? "", // <-- Edit කිරීම ආරම්භයේදී දත්ත පිරවීම
+      telegram_link: (r as any).telegram_link ?? "", // <-- ආරක්ෂිතව සේව් වූ telegram_link කියවා ගනී
       description: r.description ?? "",
       rating: r.rating == null ? "" : String(r.rating),
       year: r.year == null ? "" : String(r.year),
       genre: r.genre ?? "",
       season: r.season == null ? "" : String(r.season),
       episode: r.episode == null ? "" : String(r.episode),
-      metatags: (r as any).metatags ?? "",
+      metatags: (r as any).metatags ?? "", // <-- ආරක්ෂිතව සේව් වූ metatags කියවා ගනී
     });
     setStatus({ type: "idle" });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -656,7 +655,7 @@ function Dashboard() {
                         localStorage.setItem("pixelpop_tg_bot_token", e.target.value);
                       }}
                       placeholder="e.g. 123456789:ABCdefGhI..."
-                      className="mt-2 w-full px-3 py-2.5 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-xs transition-colors"
+                      className="mt-2 w-full px-3 py-2 rounded-xl bg-muted/60 border border-border focus:border-primary focus:outline-none text-xs transition-colors"
                     />
                   </label>
                   <label className="block">
@@ -688,7 +687,7 @@ function Dashboard() {
                   <Field label="Title *" value={form.title} onChange={(v) => set("title", v)} placeholder="e.g. Breaking Bad S01E01" />
                   <Field label="Download Link *" value={form.download_link} onChange={(v) => set("download_link", v)} placeholder="https://..." />
                   
-                  {/* 🔥 Telegram Download Link කොටුව (Input) එකතු කිරීම */}
+                  {/* Telegram Download Link Input */}
                   <Field label="Telegram Download Link" value={form.telegram_link} onChange={(v) => set("telegram_link", v)} placeholder="https://t.me/pixelpoplk/1234" />
                   
                   <Field label="Image URL *" value={form.image_url} onChange={(v) => set("image_url", v)} placeholder="https://image.tmdb.org/..." className="sm:col-span-2" />
@@ -988,4 +987,5 @@ function Field({
       />
     </label>
   );
-        }
+}
+ 
