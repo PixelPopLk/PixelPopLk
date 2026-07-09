@@ -140,7 +140,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 // 50/50 Rotation සඳහා URL දෙකම ඇතුළත් කර ඇත
 const MONETAG_POPUNDER_URL = "https://omg10.com/4/11202064";
-const ADSTERRA_POPUNDER_URL = "https://www.effectivecpmnetwork.com/b795sywmp?key=20b07ce2b76b7238eae7acf49dd3a534";
+const ADSTERRA_POPUNDER_URL = "https://omg10.com/4/11172288";
 
 function MonetagPopunder() {
   useEffect(() => {
