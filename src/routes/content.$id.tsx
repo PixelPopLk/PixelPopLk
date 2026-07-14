@@ -54,17 +54,16 @@ function ContentPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["subtitles", id],
     queryFn: async () => {
-      // 1. මුලින්ම අදාළ ID එක තියෙන දත්තය පමණක් ලබා ගනී
+      // 1. අදාළ ID එක Number එකක් ලෙස සකසා දත්තය ලබා ගනී (TypeScript error එක වළක්වා ඇත)
       const { data: targetItem, error: firstError } = await supabase
         .from(SUBTITLES_TABLE)
         .select("*")
-        .eq("id", id)
+        .eq("id", Number(id) as any)
         .maybeSingle();
 
       if (firstError) throw firstError;
       if (!targetItem) return [] as Subtitle[];
 
-      // TypeScript error එක සම්පූර්ණයෙන්ම සකසන ලද Series හඳුනාගැනීමේ කොටස
       const isSeries = (() => {
         const sNum = targetItem.season;
         const eNum = targetItem.episode;
@@ -490,7 +489,7 @@ function CommentsSection({ subtitleId }: { subtitleId: string }) {
       const { data, error } = await supabase
         .from("subtitle_comments")
         .select("*")
-        .eq("subtitle_id", subtitleId)
+        .eq("subtitle_id", Number(subtitleId) as any) // <-- TypeScript සේෆ් වන සේ සකසා ඇත
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -519,7 +518,7 @@ function CommentsSection({ subtitleId }: { subtitleId: string }) {
 
     setSubmitting(true);
     const { error = null } = await supabase.from("subtitle_comments").insert({
-      subtitle_id: subtitleId,
+      subtitle_id: Number(subtitleId) as any, // <-- TypeScript සේෆ් වන සේ සකසා ඇත
       author_name: authorName.trim(),
       comment_text: commentText.trim(),
     });
