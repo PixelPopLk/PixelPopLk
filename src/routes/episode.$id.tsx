@@ -41,11 +41,11 @@ function EpisodePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["subtitles", id],
     queryFn: async () => {
-      // 1. මුලින්ම අදාළ Episode ID එකට අදාළ දත්තය පමණක් ලබා ගනී
+      // 1. අදාළ Episode ID එක Number එකක් ලෙස සකසා දත්තය ලබා ගනී (TypeScript error එක වළක්වා ඇත)
       const { data: targetItem, error: firstError } = await supabase
         .from(SUBTITLES_TABLE)
         .select("*")
-        .eq("id", id)
+        .eq("id", Number(id) as any)
         .maybeSingle();
 
       if (firstError) throw firstError;
