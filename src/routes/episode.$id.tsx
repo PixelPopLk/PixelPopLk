@@ -9,6 +9,7 @@ import {
   formatRating,
   genreBadgeClass,
   splitGenres,
+  parseTitle, // <-- parseTitle ශ්‍රිතය මෙතැනට එකතු කරන ලදී
   type GridItem,
 } from "@/lib/subtitles";
 import { Navbar } from "@/components/Navbar";
@@ -37,7 +38,6 @@ export const Route = createFileRoute("/episode/$id")({
 function EpisodePage() {
   const { id } = Route.useParams();
 
-  // දත්ත ලබා ගැනීම සීමා කරන ලද (Optimized) React Query එක
   const { data, isLoading } = useQuery({
     queryKey: ["subtitles", id],
     queryFn: async () => {
@@ -51,11 +51,12 @@ function EpisodePage() {
       if (firstError) throw firstError;
       if (!targetItem) return [] as Subtitle[];
 
-      // 2. එය අයත් වන TV Series එකේ අනෙකුත් සියලුම episodes පමණක් ලබා ගනී ("More from this season" සඳහා)
+      // 2. එය අයත් වන TV Series එකේ 'showName' එක වෙන් කරගෙන, එම නමින් පටන් ගන්නා සියලුම episodes පමණක් ලබා ගනී ("More from this season" සඳහා)
+      const parsed = parseTitle(targetItem.title ?? "");
       const { data: allEpisodes, error: secondError } = await supabase
         .from(SUBTITLES_TABLE)
         .select("*")
-        .eq("title", targetItem.title)
+        .ilike("title", `${parsed.showName}%`) // <-- SQL LIKE Query එකක් මඟින් සියලුම Episodes ලබා ගනී
         .order("created_at", { ascending: false });
 
       if (secondError) throw secondError;
@@ -78,7 +79,6 @@ function EpisodePage() {
   const series = found?.series;
   const ep = found?.ep;
 
-  // React Hooks සැමවිටම පොදුවේ (Unconditionally) ක්‍රියාත්මක වීම සඳහා දත්ත ආරක්ෂිතව සකසා ගැනීම
   const genres = useMemo(() => (ep ? splitGenres(ep.genre) : []), [ep]);
   const rating = useMemo(() => (ep ? formatRating(ep.rating) : null), [ep]);
   const year = useMemo(() => {
@@ -104,7 +104,7 @@ function EpisodePage() {
     : "";
 
   useEffect(() => {
-    if (!series || !ep) return; // දත්ත පූරණය වන තෙක් SEO update වීම නවත්වයි
+    if (!series || !ep) return;
 
     document.title = titleText;
     const updateMeta = (nameOrProperty: string, content: string, isProperty = false) => {
