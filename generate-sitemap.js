@@ -62,7 +62,7 @@ async function generateSitemap() {
     console.log("Sitemap generated successfully at ./public/sitemap.xml!");
   } catch (err) {
     console.error("Failed to generate sitemap:", err);
-    process.exit(0);
+    process.exit(1);
   }
 }
 
