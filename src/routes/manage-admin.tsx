@@ -17,6 +17,7 @@ import {
   XCircle,
   Sparkles,
   Send,
+  Upload,
 } from "lucide-react";
 import { supabase, SUBTITLES_TABLE, type Subtitle } from "@/integrations/supabase/client";
 import { splitGenres, genreBadgeClass } from "@/lib/subtitles";
@@ -234,6 +235,197 @@ const extractTmdbId = (input: string): { id: string; type: "movie" | "tv" | null
   }
   return { id: clean, type: null };
 };
+
+// =========================================================================
+// CSV PARSING LOGIC & COMPONENT (කිසිම Dependency එකක් අවශ්‍ය නොවේ, Newlines support කරයි)
+// =========================================================================
+
+function parseComplexCSV(text: string): string[][] {
+  const result: string[][] = [];
+  let row: string[] = [];
+  let entry = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (nextChar === '"') {
+          entry += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        entry += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        row.push(entry);
+        entry = '';
+      } else if (char === '\n' || char === '\r') {
+        row.push(entry);
+        entry = '';
+        if (row.length > 0 && row.some(cell => cell.trim() !== '')) {
+          result.push(row);
+        }
+        row = [];
+        if (char === '\r' && nextChar === '\n') {
+          i++;
+        }
+      } else {
+        entry += char;
+      }
+    }
+  }
+  if (entry || row.length > 0) {
+    row.push(entry);
+    if (row.some(cell => cell.trim() !== '')) {
+      result.push(row);
+    }
+  }
+  return result;
+}
+
+interface CSVUploaderProps {
+  refetch: () => void;
+}
+
+function CSVUploader({ refetch }: CSVUploaderProps) {
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [errorDetails, setErrorDetails] = useState('');
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setMessage('Parsing CSV file...');
+    setErrorDetails('');
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      try {
+        const rows = parseComplexCSV(text);
+        if (rows.length < 2) {
+          throw new Error('CSV file is empty or formatted incorrectly.');
+        }
+
+        // BOM character එක ඇත්නම් ඉවත් කර Headers සකස් කිරීම
+        const headers = rows[0].map(h => h.trim().replace(/^\uFEFF/, ''));
+        const parsedData: any[] = [];
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const obj: any = {};
+          
+          headers.forEach((header, index) => {
+            let value: any = row[index] !== undefined ? row[index] : null;
+            if (typeof value === 'string') {
+              value = value.trim();
+            }
+            
+            // Database Types වලට අනුව Data සකස් කිරීම
+            if (header === 'title' || header === 'image_url' || header === 'download_link') {
+              obj[header] = value || '';
+            } else if (header === 'telegram_link' || header === 'description' || header === 'genre' || header === 'metatags') {
+              obj[header] = value || null;
+            } else if (header === 'rating' || header === 'year') {
+              obj[header] = value === null || value === '' ? null : (Number.isNaN(Number(value)) ? value : Number(value));
+            } else if (header === 'season' || header === 'episode') {
+              obj[header] = value === null || value === '' ? null : Number(value);
+            } else {
+              obj[header] = value;
+            }
+          });
+          
+          // Basic check to ensure valid row
+          if (obj.title && obj.download_link) {
+            parsedData.push(obj);
+          }
+        }
+
+        if (parsedData.length === 0) {
+          throw new Error('No valid records containing both "title" and "download_link" were found.');
+        }
+
+        setMessage(`Uploading ${parsedData.length} records to Database...`);
+
+        const { error } = await supabase
+          .from(SUBTITLES_TABLE) 
+          .insert(parsedData);
+
+        if (error) throw error;
+
+        setMessage(`Successfully uploaded ${parsedData.length} items via CSV! 🎉`);
+        refetch();
+      } catch (err: any) {
+        console.error(err);
+        setMessage('Upload Failed!');
+        setErrorDetails(err.message || 'Unknown database error occurred.');
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    reader.onerror = () => {
+      setMessage('Error reading file.');
+      setUploading(false);
+    };
+
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="bg-card-elevated rounded-3xl border border-border p-6 sm:p-8 shadow-card space-y-4">
+      <h3 className="text-sm font-bold tracking-wide uppercase text-primary flex items-center gap-2">
+        <Upload className="w-4 h-4 text-primary" /> Bulk Upload via CSV (Subtitles / Episodes)
+      </h3>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Upload multiple episodes instantly. CSV Headers must match: 
+        <code className="ml-1 px-1.5 py-0.5 rounded bg-muted text-foreground text-[10px] font-mono">
+          title,download_link,image_url,genre,description,rating,year,season,episode,metatags,telegram_link
+        </code>
+      </p>
+
+      <div className="pt-2">
+        <input 
+          type="file" 
+          accept=".csv" 
+          onChange={handleFileUpload} 
+          disabled={uploading}
+          className="flex h-10 w-full rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-xs file:font-bold file:text-primary hover:cursor-pointer disabled:opacity-50"
+        />
+      </div>
+
+      {message && (
+        <p className={`text-xs font-semibold flex items-center gap-1.5 ${message.includes('Successfully') ? 'text-green-500' : 'text-primary'}`}>
+          {message.includes('Successfully') ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {message}
+        </p>
+      )}
+      {errorDetails && (
+        <p className="text-xs text-destructive bg-destructive/10 p-3 rounded-xl border border-destructive/20 font-medium">
+          Error: {errorDetails}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// =========================================================================
+
+type Status =
+  | { type: "idle" }
+  | { type: "saving" }
+  | { type: "success"; msg: string }
+  | { type: "error"; msg: string };
 
 function Dashboard() {
   const qc = useQueryClient();
@@ -675,6 +867,9 @@ function Dashboard() {
               )}
             </div>
 
+            {/* CSV Uploader */}
+            <CSVUploader refetch={refetch} />
+
             {/* Subtitles Input Form */}
             <motion.form
               initial={{ opacity: 0, y: 10 }}
@@ -988,4 +1183,3 @@ function Field({
     </label>
   );
 }
- 
