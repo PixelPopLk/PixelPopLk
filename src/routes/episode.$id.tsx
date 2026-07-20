@@ -245,17 +245,17 @@ function EpisodePage() {
                     <p className="text-[15px] leading-relaxed text-foreground/85 whitespace-pre-line">
                       {ep.description}
                     </p>
-
-                    {/* 🟢 1. කියවන Text එකට යටින්ම පළමු Ad එක */}
-                    <div className="mt-4">
-                      <AdBanner />
-                    </div>
                   </div>
                 ) : (
                   <div className="mt-6 p-4 rounded-xl bg-background/40 border border-border text-sm text-muted-foreground leading-relaxed">
                     High-quality Sinhala subtitle synced for the official release.
                   </div>
                 )}
+
+                {/* 🟢 1. පළමු Ad එක (හැම තිස්සෙම පෙන්වයි) */}
+                <div className="mt-4">
+                  <AdBanner />
+                </div>
 
                 {/* Download Buttons Section */}
                 <div className="mt-7 flex flex-col sm:flex-row gap-3">
@@ -269,7 +269,7 @@ function EpisodePage() {
                   Opens in a new tab. Thank you for supporting PixelPopLK ❤
                 </p>
 
-                {/* 🟢 2. Download Buttons වලට යටින් දෙවැනි Ad එක */}
+                {/* 🟢 2. දෙවැනි Ad එක (හැම තිස්සෙම පෙන්වයි) */}
                 <div className="mt-4">
                   <AdBanner />
                 </div>
