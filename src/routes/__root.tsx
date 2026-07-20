@@ -117,20 +117,25 @@ const websiteSchema = {
 };
 
 function RootShell({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    // Saved theme එක localStorage එකෙන් අරන් <html> tag එකට dark class එක එකතු කරයි
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
-        
         {/* 🔥 Google Search Console Verification Meta Tag */}
         <meta name="google-site-verification" content="VoErL02EHeHtDv46aBcjIEm5DpUTnJRhPF89ewoK-M4" />
-        
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
       </head>
-      <body>
+      <body className="bg-background text-foreground transition-colors duration-300">
         {children}
         <Scripts />
       </body>
