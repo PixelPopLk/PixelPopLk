@@ -5,7 +5,6 @@ import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
 import { TelegramIcon, FacebookIcon } from "./SocialIcons";
 
-// 1. Popup එකේ පෙන්නන්න ඕනේ Data Type එක
 export interface SearchItem {
   id: string;
   title: string;
@@ -18,12 +17,7 @@ export interface SearchItem {
 
 export function LogoIcon({ className = "w-9 h-9" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 100 100"
-      className={`${className} filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.55)]`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg viewBox="0 0 100 100" className={`${className} filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.55)]`} fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="metal-silver" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#f8fafc" />
@@ -32,7 +26,6 @@ export function LogoIcon({ className = "w-9 h-9" }: { className?: string }) {
           <stop offset="75%" stopColor="#cbd5e1" />
           <stop offset="100%" stopColor="#1e293b" />
         </linearGradient>
-
         <linearGradient id="metal-gold" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#fef08a" />
           <stop offset="30%" stopColor="#ca8a04" />
@@ -41,31 +34,9 @@ export function LogoIcon({ className = "w-9 h-9" }: { className?: string }) {
           <stop offset="100%" stopColor="#422006" />
         </linearGradient>
       </defs>
-
-      <path
-        d="M24,78 L37,22 L47,22 L34,78 Z"
-        fill="url(#metal-silver)"
-        stroke="#020617"
-        strokeWidth="1.2"
-      />
-
-      <path
-        d="M37,22 L64,22 C76,22 76,46 64,46 L43,46"
-        fill="none"
-        stroke="url(#metal-silver)"
-        strokeWidth="9.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M48,34 C56,34 65,37 65,46 C65,58 54,68 38,68 L66,68"
-        fill="none"
-        stroke="url(#metal-gold)"
-        strokeWidth="9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M24,78 L37,22 L47,22 L34,78 Z" fill="url(#metal-silver)" stroke="#020617" strokeWidth="1.2" />
+      <path d="M37,22 L64,22 C76,22 76,46 64,46 L43,46" fill="none" stroke="url(#metal-silver)" strokeWidth="9.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M48,34 C56,34 65,37 65,46 C65,58 54,68 38,68 L66,68" fill="none" stroke="url(#metal-gold)" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -77,7 +48,7 @@ interface NavbarProps {
   showBack?: boolean;
   backTo?: string;
   backText?: string;
-  searchResults?: SearchItem[]; // ඔයාගේ Movies List එක මෙතනට පාස් කරන්න පුළුවන්
+  searchResults?: SearchItem[];
 }
 
 export function Navbar({
@@ -94,7 +65,6 @@ export function Navbar({
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Search box එකෙන් එලිය ක්ලික් කල විට popup එක auto close වීම
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -105,7 +75,6 @@ export function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter Search Results (Query එකට අනුව Movies/Series filter වීම)
   const filteredResults = searchResults.filter((item) =>
     item.title.toLowerCase().includes(query.toLowerCase().trim())
   );
@@ -118,10 +87,7 @@ export function Navbar({
         <div className="flex items-center gap-3 shrink-0">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <button
-                className="p-2 rounded-xl hover:bg-muted/40 transition cursor-pointer text-foreground hover:text-primary"
-                aria-label="Open menu"
-              >
+              <button className="p-2 rounded-xl hover:bg-muted/40 transition cursor-pointer text-foreground hover:text-primary" aria-label="Open menu">
                 <Menu className="w-5 h-5" />
               </button>
             </SheetTrigger>
@@ -136,7 +102,7 @@ export function Navbar({
           </Link>
         </div>
 
-        {/* Center: Search Bar with Rich Card Popup (psa.wf style) */}
+        {/* Center: Search Bar with Auto Dropdown */}
         {showSearch && setQuery && (
           <div ref={searchRef} className="flex-1 max-w-xl mx-auto relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -164,10 +130,9 @@ export function Navbar({
               </button>
             )}
 
-            {/* 🔥 PSA.WF Style Auto Popup Card Dropdown */}
+            {/* Auto Popup Dropdown */}
             {showPopup && query.trim() !== "" && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl z-50 overflow-hidden max-h-96 overflow-y-auto p-2 divide-y divide-border/40">
-                
                 {filteredResults.length > 0 ? (
                   filteredResults.map((item) => (
                     <div
@@ -180,14 +145,18 @@ export function Navbar({
                       }}
                       className="flex items-center gap-3 p-2.5 hover:bg-muted/70 rounded-xl cursor-pointer transition group"
                     >
-                      {/* Movie Poster Image */}
-                      <img
-                        src={item.posterUrl || "https://via.placeholder.com/60x90?text=No+Cover"}
-                        alt={item.title}
-                        className="w-12 h-16 object-cover rounded-lg shrink-0 bg-muted border border-border/50 group-hover:scale-105 transition-transform"
-                      />
+                      {item.posterUrl ? (
+                        <img
+                          src={item.posterUrl}
+                          alt={item.title}
+                          className="w-12 h-16 object-cover rounded-lg shrink-0 bg-muted border border-border/50 group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-12 h-16 rounded-lg bg-muted border border-border/50 flex items-center justify-center text-[10px] text-muted-foreground font-bold shrink-0">
+                          NO COVER
+                        </div>
+                      )}
 
-                      {/* Movie Title & Description */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <h4 className="text-sm font-bold text-foreground group-hover:text-primary truncate transition">
@@ -213,12 +182,10 @@ export function Navbar({
                     </div>
                   ))
                 ) : (
-                  /* Matching Data නැති විට */
                   <div className="p-4 text-center text-sm text-muted-foreground">
                     No movies or TV series found for "<span className="text-foreground font-semibold">{query}</span>"
                   </div>
                 )}
-
               </div>
             )}
           </div>
