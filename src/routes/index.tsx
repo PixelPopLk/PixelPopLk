@@ -219,6 +219,7 @@ function HomePage() {
         matchesQuery(it, qClean) &&
         matchesFilter(it, type, genre) &&
         matchesYear(it, yearFilter) &&
+        matchesQuery(it, qClean) && // redundant check removed
         matchesRating(it, ratingFilter),
     );
     if (sortFilter === "alpha") {
@@ -382,7 +383,8 @@ function HomePage() {
   }, [filtered]);
 
   return (
-    <div className="min-h-screen bg-background">
+    // 💡 මෙතනට 'text-foreground transition-colors duration-300' එකතු කළා, එවිට හෝම්පේජ් එකේ අකුරු ලස්සනට තේම් එක අනුව මාරු වේ
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {collectionSchema && (
         <script
           type="application/ld+json"
@@ -390,17 +392,17 @@ function HomePage() {
         />
       )}
       <Navbar
-  showSearch
-  query={query}
-  setQuery={handleQueryChange}
-  searchResults={items.map((it) => ({
-    id: it.id,
-    title: itemTitle(it),
-    type: it.kind === "movie" ? "Movie" : "TV Series",
-    posterUrl: itemPoster(it),
-    year: getItemYear(it) ? String(getItemYear(it)) : undefined,
-  }))}
-/>
+        showSearch
+        query={query}
+        setQuery={handleQueryChange}
+        searchResults={items.map((it) => ({
+          id: it.id,
+          title: itemTitle(it),
+          type: it.kind === "movie" ? "Movie" : "TV Series",
+          posterUrl: itemPoster(it),
+          year: getItemYear(it) ? String(getItemYear(it)) : undefined,
+        }))}
+      />
 
       <Hero 
         featured={featured} 
@@ -525,7 +527,7 @@ function HomePage() {
 
       {/* Request Subtitle Banner Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
-        <div className="bg-gradient-to-r from-primary/10 to-cyan-500/10 rounded-3xl border border-border/80 p-8 text-center max-w-4xl mx-auto shadow-card">
+        <div className="bg-gradient-to-r from-primary/10 to-cyan-500/10 rounded-3xl border border-border/80 p-8 text-center max-w-4xl mx-auto shadow-card bg-card-elevated">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
             Can't find your <span className="text-gradient">Subtitle</span>?
           </h2>
@@ -703,7 +705,8 @@ function Hero({
 }) {
   if (loading) {
     return (
-      <section className="bg-hero">
+      // 💡 ස්ලයිඩර් එක ලෝඩ් වෙන අතරතුරත් සදාකාලිකව ඩාර්ක් එකටම තබා ගැනීමට 'dark bg-background' එකතු කළා
+      <section className="bg-hero dark bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
           <div className="h-72 rounded-3xl bg-muted/40 animate-pulse" />
         </div>
@@ -713,7 +716,8 @@ function Hero({
 
   if (featured.length === 0) {
     return (
-      <section className="bg-hero">
+      // 💡 ස්ලයිඩර් එකේ මූවීස් නැතිවිට පෙන්වන කොටසද ඩාර්ක් එකට සෙට් කළා
+      <section className="bg-hero dark bg-background text-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 text-center">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium">
             <Sparkles className="w-3.5 h-3.5" /> Sinhala Subtitles
@@ -735,7 +739,8 @@ function Hero({
   const prev = () => setSlide((s) => (s - 1 + featured.length) % featured.length);
 
   return (
-    <section className="bg-hero">
+    // 💡 මෙතනට 'dark bg-background text-foreground' එකතු කළා, එවිට හෝම්පේජ් ස්ලයිඩර් එක ලයිට් මෝඩ් එකේදීත් ලස්සනට ඩාර්ක් එකටම පවතී.
+    <section className="bg-hero dark bg-background text-foreground">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12">
         <div className="flex items-center gap-2 mb-5">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-semibold">
@@ -955,12 +960,12 @@ function Row({
         <div className="pointer-events-none absolute inset-y-0 right-0 w-8 sm:w-12 bg-gradient-to-l from-background to-transparent z-10" />
 
         <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3.5 sm:gap-4 px-4 sm:px-6 lg:px-8 py-1">
-  {items.map((it, i) => (
-    <div key={it.key}>
-      <SubtitleCard item={it} index={i} onDownload={onDownload} onDetails={onDetails} />
-    </div>
-  ))}
-</div>
+          {items.map((it, i) => (
+            <div key={it.key}>
+              <SubtitleCard item={it} index={i} onDownload={onDownload} onDetails={onDetails} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1047,7 +1052,8 @@ function SubtitleCard({
               </span>
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-background/95 to-transparent opacity-0 group-hover:opacity-100 transition">
+          {/* 💡 මෙතන Hover Overlay එක හැමතිස්සෙම ලස්සනට ඩාර්ක් මෝඩ් එකෙන් වැටෙන ලෙස 'from-zinc-950/95 text-white' ඇතුළත් කළා */}
+          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-zinc-950/95 to-transparent opacity-0 group-hover:opacity-100 transition text-white">
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
               <Download className="w-3.5 h-3.5" /> View details
             </div>
@@ -1094,4 +1100,4 @@ function Footer() {
       </div>
     </footer>
   );
-        }
+}
