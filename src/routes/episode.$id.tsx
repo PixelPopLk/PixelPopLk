@@ -159,7 +159,7 @@ function EpisodePage() {
   } : null;
 
   return (
-    <Shell>
+    <EpisodeShell>
       {isLoading ? (
         <div className="h-96 rounded-3xl bg-muted/30 animate-pulse" />
       ) : !data ? (
@@ -269,7 +269,7 @@ function EpisodePage() {
           <OtherEpisodes series={found.series} currentId={String(ep.id)} />
         </>
       )}
-    </Shell>
+    </EpisodeShell>
   );
 }
 
@@ -320,7 +320,8 @@ function OtherEpisodes({
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+// Shell component එක වෙනුවට ගැටුම් වළක්වා ගැනීමට EpisodeShell ලෙස වෙනස් කර ඇත
+function EpisodeShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <Navbar showBack backTo="/" backText="Home" />
