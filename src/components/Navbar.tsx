@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, Search, X, ArrowLeft } from "lucide-react";
+import { Menu, Search, X, ArrowLeft, Sun, Moon } from "lucide-react";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
 import { TelegramIcon, FacebookIcon } from "./SocialIcons";
@@ -63,6 +63,37 @@ export function Navbar({
   const [showPopup, setShowPopup] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Dark/Light Theme State Logic
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return true;
+  });
+
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setIsDark(true);
+    }
+  };
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    } else {
+      document.documentElement.classList.remove("dark");
+      setIsDark(false);
+    }
+  }, []);
+
   // Search Container එකෙන් එලිය ක්ලික් කල විට පමණක් Dropdown එක close වීම
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,8 +110,8 @@ export function Navbar({
   );
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/80 border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/80 border-b border-border transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         
         {/* Left: Menu & Logo */}
         <div className="flex items-center gap-3 shrink-0">
@@ -129,7 +160,7 @@ export function Navbar({
               </button>
             )}
 
-            {/* 🔥 Auto Popup Dropdown */}
+            {/* Auto Popup Dropdown */}
             {showPopup && query.trim() !== "" && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl z-50 overflow-hidden max-h-96 overflow-y-auto p-2 divide-y divide-border/40">
                 {filteredResults.length > 0 ? (
@@ -184,22 +215,33 @@ export function Navbar({
           </div>
         )}
 
-        {/* Right: Social Links / Back Button */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Right: Theme Toggle & Social Links / Back Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          
+          {/* 🔥 Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full bg-muted/60 border border-border hover:bg-muted text-foreground transition cursor-pointer flex items-center justify-center"
+            aria-label="Toggle theme"
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+          </button>
+
           {showBack ? (
             <Link
               to={backTo as any}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition font-medium"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition font-medium ml-2"
             >
               <ArrowLeft className="w-4 h-4" /> {backText}
             </Link>
           ) : (
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2.5">
               <a
                 href="https://t.me/Pixel_Pop_Lk"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#229ED9]/30 bg-[#229ED9]/10 text-white hover:bg-[#229ED9]/25 hover:border-[#229ED9]/50 transition duration-300 text-xs font-bold"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#229ED9]/30 bg-[#229ED9]/10 text-white hover:bg-[#229ED9]/25 hover:border-[#229ED9]/50 transition duration-300 text-xs font-bold"
               >
                 <TelegramIcon className="w-3.5 h-3.5 text-[#229ED9]" />
                 Join Telegram
@@ -208,7 +250,7 @@ export function Navbar({
                 href="https://www.facebook.com/share/1Ec2mYq4aa/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#1877F2]/30 bg-[#1877F2]/10 text-white hover:bg-[#1877F2]/25 hover:border-[#1877F2]/50 transition duration-300 text-xs font-bold"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#1877F2]/30 bg-[#1877F2]/10 text-white hover:bg-[#1877F2]/25 hover:border-[#1877F2]/50 transition duration-300 text-xs font-bold"
               >
                 <FacebookIcon className="w-3.5 h-3.5 text-[#1877F2]" />
                 Follow Facebook
