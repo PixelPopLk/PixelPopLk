@@ -1,9 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, Search, X, ArrowLeft } from "lucide-react";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
 import { TelegramIcon, FacebookIcon } from "./SocialIcons";
+
+// 1. Popup එකේ පෙන්නන්න ඕනේ Data Type එක
+export interface SearchItem {
+  id: string;
+  title: string;
+  type: "Movie" | "TV Series";
+  year?: string;
+  posterUrl?: string;
+  description?: string;
+  slug?: string;
+}
 
 export function LogoIcon({ className = "w-9 h-9" }: { className?: string }) {
   return (
@@ -66,6 +77,7 @@ interface NavbarProps {
   showBack?: boolean;
   backTo?: string;
   backText?: string;
+  searchResults?: SearchItem[]; // ඔයාගේ Movies List එක මෙතනට පාස් කරන්න පුළුවන්
 }
 
 export function Navbar({
@@ -75,12 +87,14 @@ export function Navbar({
   showBack = false,
   backTo = "/",
   backText = "Back",
+  searchResults = [],
 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  // Search box එකෙන් එලිය ක්ලික් කල විට popup එක hide වීම
+  // Search box එකෙන් එලිය ක්ලික් කල විට popup එක auto close වීම
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -91,10 +105,16 @@ export function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Filter Search Results (Query එකට අනුව Movies/Series filter වීම)
+  const filteredResults = searchResults.filter((item) =>
+    item.title.toLowerCase().includes(query.toLowerCase().trim())
+  );
+
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-border">
+    <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/80 border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Left Side: Hamburger & Logo */}
+        
+        {/* Left: Menu & Logo */}
         <div className="flex items-center gap-3 shrink-0">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
@@ -116,7 +136,7 @@ export function Navbar({
           </Link>
         </div>
 
-        {/* Center: Search Bar with Auto Popup */}
+        {/* Center: Search Bar with Rich Card Popup (psa.wf style) */}
         {showSearch && setQuery && (
           <div ref={searchRef} className="flex-1 max-w-xl mx-auto relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -144,26 +164,67 @@ export function Navbar({
               </button>
             )}
 
-            {/* 🔥 Search Bar එකට කෙලින්ම යටින් එන Auto Popup Dropdown එක */}
+            {/* 🔥 PSA.WF Style Auto Popup Card Dropdown */}
             {showPopup && query.trim() !== "" && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl z-50 overflow-hidden max-h-64 overflow-y-auto p-2">
-                <div 
-                  onClick={() => setShowPopup(false)}
-                  className="p-3 hover:bg-muted/60 rounded-xl cursor-pointer flex justify-between items-center transition"
-                >
-                  <span className="text-sm font-medium text-foreground">
-                    Search for "<span className="text-primary">{query}</span>"
-                  </span>
-                  <span className="text-xs bg-primary/20 text-primary font-semibold px-2.5 py-1 rounded-lg">
-                    Press Enter
-                  </span>
-                </div>
+              <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl z-50 overflow-hidden max-h-96 overflow-y-auto p-2 divide-y divide-border/40">
+                
+                {filteredResults.length > 0 ? (
+                  filteredResults.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setShowPopup(false);
+                        if (item.slug) {
+                          navigate({ to: `/movie/${item.slug}` as any });
+                        }
+                      }}
+                      className="flex items-center gap-3 p-2.5 hover:bg-muted/70 rounded-xl cursor-pointer transition group"
+                    >
+                      {/* Movie Poster Image */}
+                      <img
+                        src={item.posterUrl || "https://via.placeholder.com/60x90?text=No+Cover"}
+                        alt={item.title}
+                        className="w-12 h-16 object-cover rounded-lg shrink-0 bg-muted border border-border/50 group-hover:scale-105 transition-transform"
+                      />
+
+                      {/* Movie Title & Description */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="text-sm font-bold text-foreground group-hover:text-primary truncate transition">
+                            {item.title}
+                          </h4>
+                          <span className="text-[10px] bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full shrink-0">
+                            {item.type}
+                          </span>
+                        </div>
+
+                        {item.year && (
+                          <span className="text-xs text-muted-foreground font-medium block mt-0.5">
+                            {item.year}
+                          </span>
+                        )}
+
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground/80 line-clamp-2 mt-1 leading-relaxed">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  /* Matching Data නැති විට */
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No movies or TV series found for "<span className="text-foreground font-semibold">{query}</span>"
+                  </div>
+                )}
+
               </div>
             )}
           </div>
         )}
 
-        {/* Right Side: Back button or Desktop Social Links */}
+        {/* Right: Social Links / Back Button */}
         <div className="flex items-center gap-3 shrink-0">
           {showBack ? (
             <Link
@@ -178,23 +239,24 @@ export function Navbar({
                 href="https://t.me/Pixel_Pop_Lk"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#229ED9]/30 bg-[#229ED9]/10 text-white hover:bg-[#229ED9]/25 hover:border-[#229ED9]/50 hover:shadow-[#229ED9]/20 hover:shadow-glow transition duration-300 text-xs font-bold"
+                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#229ED9]/30 bg-[#229ED9]/10 text-white hover:bg-[#229ED9]/25 hover:border-[#229ED9]/50 transition duration-300 text-xs font-bold"
               >
                 <TelegramIcon className="w-3.5 h-3.5 text-[#229ED9]" />
-                Join Telegram Channel
+                Join Telegram
               </a>
               <a
                 href="https://www.facebook.com/share/1Ec2mYq4aa/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#1877F2]/30 bg-[#1877F2]/10 text-white hover:bg-[#1877F2]/25 hover:border-[#1877F2]/50 hover:shadow-[#1877F2]/20 hover:shadow-glow transition duration-300 text-xs font-bold"
+                className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#1877F2]/30 bg-[#1877F2]/10 text-white hover:bg-[#1877F2]/25 hover:border-[#1877F2]/50 transition duration-300 text-xs font-bold"
               >
                 <FacebookIcon className="w-3.5 h-3.5 text-[#1877F2]" />
-                Follow Facebook Page
+                Follow Facebook
               </a>
             </div>
           )}
         </div>
+
       </div>
     </header>
   );
