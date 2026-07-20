@@ -252,9 +252,9 @@ function EpisodePage() {
                   </div>
                 )}
 
-                {/* 🟢 1. පළමු Ad එක (හැම තිස්සෙම පෙන්වයි) */}
+                {/* 🟢 1. පළමු Ad එක (300x250) */}
                 <div className="mt-4">
-                  <AdBanner />
+                  <AdBanner zoneKey="9dd5c8b0fb237459ed96d9d5952c404d" width={300} height={250} />
                 </div>
 
                 {/* Download Buttons Section */}
@@ -269,9 +269,9 @@ function EpisodePage() {
                   Opens in a new tab. Thank you for supporting PixelPopLK ❤
                 </p>
 
-                {/* 🟢 2. දෙවැනි Ad එක (හැම තිස්සෙම පෙන්වයි) */}
+                {/* 🟢 2. දෙවැනි Ad එක (728x90) */}
                 <div className="mt-4">
-                  <AdBanner />
+                  <AdBanner zoneKey="c40246f137a89efa5b84b57e5fd1045c" width={728} height={90} />
                 </div>
 
               </div>
