@@ -63,7 +63,7 @@ export function Navbar({
   const [showPopup, setShowPopup] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Search box එකෙන් එලිය ක්ලික් කරාම Popup එක close වීම
+  // Search Container එකෙන් එලිය ක්ලික් කල විට පමණක් Dropdown එක close වීම
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -74,7 +74,6 @@ export function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter Search Results
   const filteredResults = searchResults.filter((item) =>
     item.title.toLowerCase().includes(query.toLowerCase().trim())
   );
@@ -139,7 +138,10 @@ export function Navbar({
                       key={item.id}
                       to="/content/$id"
                       params={{ id: String(item.id) }}
-                      onMouseDown={() => setShowPopup(false)}
+                      onClick={() => {
+                        setShowPopup(false);
+                        setQuery("");
+                      }}
                       className="flex items-center gap-3 p-2.5 hover:bg-muted/70 rounded-xl cursor-pointer transition group"
                     >
                       {item.posterUrl ? (
